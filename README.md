@@ -15,7 +15,7 @@ El sitio es estático: no hay build ni dependencias. Cloudflare está conectado
 a este repositorio, así que **cada push a `main` publica** en
 https://empiece-ya.nelson1614.workers.dev. No hay que subir ningún archivo a mano.
 
-La conexión se hace una sola vez, en Cloudflare → Workers & Pages →
+La conexión se hizo una sola vez (20/10/2026), en Cloudflare → Workers & Pages →
 `empiece-ya` → Settings → Builds → Connect: este repo, rama `main`, sin
 comando de build. El nombre que lleva el `wrangler.toml` es el del Worker que
 ya existía, así que **el link no cambia**.
