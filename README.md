@@ -29,9 +29,12 @@ clave pública. Lo que se puede leer lo deciden las funciones de la base, no el 
 - `admin_login(p_clave)` da el token de sesión y `eya_dashboard(p_token)`
   devuelve todos los datos en un JSON. Sin token válido responde «Sesion invalida».
 - `eya_periodos` — un cierre (PB) por fila, con estado `Historico`, `Oficial` o `Preliminar`
-- `eya_historico` — los ganadores hasta el PB09 de 2026
-- `eya_premios` — un premio por fila y por PB desde el PB10 de 2026. Es
+- `eya_historico` — los ganadores hasta el PB09 de 2026 (lista consolidada, sin premios)
+- `eya_premios` — un premio por fila y por PB desde el PB01 de 2026. Es
   acumulativo: la misma persona puede volver a salir en otro PB con otro premio
+- `eya_estado_carga()` — cada cierre hasta el último: `Oficial`, `Preliminar`,
+  `Historico` (solo ganadores, sin premios) o `Falta`. En el subtítulo,
+  «actualizado al …» abre ese detalle por año.
 - `eya_asesores` — vista con cada asesor **una sola vez**, con la fecha de su primera calificación
 - `eya_items`, `eya_item_alias` — el catálogo de premios y cómo se reconoce cada uno en el texto del PDF
 
@@ -46,6 +49,8 @@ Cada cierre llega el PDF «Resultados Programa Eya! - PBxx». Se carga con
 `[codigo, nombre, division, premio]`. Reglas que aplica la base:
 
 - un PB `Oficial` no se vuelve a cargar; un `Preliminar` se reemplaza cuando llega el oficial
+- un PB que solo estaba en el histórico se completa con su PDF de premios: se
+  pasa a `Preliminar` y se carga como `Oficial` (así se hizo con PB01–PB09 de 2026)
 - cada asesor cuenta una sola vez, con su primera calificación
 - los premios se normalizan con `eya_item_alias`; si aparece uno nuevo, se agrega ahí
 

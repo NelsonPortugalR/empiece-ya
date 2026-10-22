@@ -140,6 +140,34 @@
   .btn-primary:disabled{opacity:.6;cursor:default}
   .spinner{width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
   @keyframes spin{to{transform:rotate(360deg)}}
+  .link-btn{background:none;border:0;padding:0;color:#4f46e5;font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .st{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;vertical-align:1px;white-space:nowrap;border:0;cursor:pointer;font-family:inherit}
+  .st-of{background:#dcfce7;color:#15803d}
+  .st-pre{background:#fef3c7;color:#b45309}
+  .st-his{background:#f1f5f9;color:#475569}
+  .st-fal{background:#fee2e2;color:#b91c1c}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1100;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .modal-bg.open{display:flex}
+  .modal-card{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:20px 22px 24px;box-shadow:0 20px 50px rgba(15,23,42,.25)}
+  .modal-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .modal-h h2{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .modal-x{background:none;border:0;font-size:28px;line-height:1;color:#64748b;cursor:pointer;padding:0 4px;min-width:36px;min-height:36px}
+  .carga-avisos{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px}
+  .carga-aviso{font-size:13px;padding:8px 10px;border-radius:8px;background:#f8fafc;border-left:3px solid #94a3b8}
+  .carga-aviso.fal{background:#fef2f2;border-color:#dc2626}
+  .carga-aviso.pre{background:#fffbeb;border-color:#d97706}
+  .carga-aviso.ok{background:#f0fdf4;border-color:#16a34a}
+  .carga-ley{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 2px}
+  .carga-ley .st{cursor:default}
+  .carga-anio{margin-top:14px}
+  .carga-anio h3{font-size:13px;font-weight:700;margin-bottom:6px;color:#334155}
+  .carga-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px}
+  .carga-cel{border-radius:6px;padding:5px 6px;font-size:11px;line-height:1.25;border:1px solid transparent}
+  .carga-cel b{display:block;font-size:12px}
+  .carga-cel.of{background:#dcfce7;color:#14532d}
+  .carga-cel.pre{background:#fef3c7;color:#78350f}
+  .carga-cel.his{background:#f1f5f9;color:#475569}
+  .carga-cel.fal{background:#fff;color:#b91c1c;border:1px dashed #dc2626}
   @media (max-width:640px){
     .app{padding:12px}
     h1{font-size:20px}
@@ -179,6 +207,7 @@
 <div id="loading-overlay" class="overlay">
   <div class="login-card"><div class="spinner"></div><div id="loading-msg">Cargando…</div></div>
 </div>
+<div id="carga-bg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="carga-titulo"><div class="modal-card" id="carga-card"></div></div>
 <div class="app">
   <div class="top-bar">
     <div>
@@ -286,7 +315,7 @@
         </div>
         <div id="person-results-body" style="max-height:560px;overflow-y:auto"></div>
       </div>
-      <p class="hint">La fecha es la primera calificación (cuenta una sola vez). Debajo del nombre se listan los premios registrados desde PB10, en orden: son acumulativos.</p>
+      <p class="hint" id="person-hint">La fecha es la primera calificación (cuenta una sola vez). Debajo del nombre se listan los premios registrados, en orden: son acumulativos.</p>
     </div>
   </div>
 
@@ -492,6 +521,10 @@ DATA.prizes.forEach(p => { (PRZ_BY_CODE[p[0]] = PRZ_BY_CODE[p[0]] || []).push(p)
 const PB_BY_DATE = {};
 DATA.pbs.forEach(p => { PB_BY_DATE[p.date] = p; });
 const PRELIM = DATA.pbs.filter(p => p.estado === 'Preliminar');
+// primer cierre con detalle de premios (antes solo hay ganadores del histórico)
+const PRZ_PRIMERO = DATA.pbs[0] || null;
+const PRZ_DESDE = PRZ_PRIMERO ? 'PB' + PRZ_PRIMERO.pb + ' de ' + PRZ_PRIMERO.year : 'el primer cierre con detalle';
+const PRZ_DESDE_LARGO = PRZ_PRIMERO ? PRZ_DESDE + ' (' + fmtDate(PRZ_PRIMERO.date) + ')' : PRZ_DESDE;
 function pbLabel(iso) { const p = PB_BY_DATE[iso]; return p ? 'PB'+p.pb+(p.estado === 'Preliminar' ? '*' : '') : fmtDateShort(iso); }
 function itemChip(i, n, always) {
   return '<span class="item-chip '+DATA.itemCat[i]+'">'+esc(DATA.items[i])+((always || n > 1) ? ' <b>'+(always ? '' : '×')+n+'</b>' : '')+'</span>';
@@ -532,11 +565,73 @@ function buildSelects() {
   const lastY = YEARS[YEARS.length - 1];
   document.getElementById('gf-year').innerHTML = '<option value="all">Todos</option>' + YEARS.map(y => '<option value="'+y+'">'+y+(y === lastY ? ' YTD' : '')+'</option>').join('');
   document.getElementById('person-year').innerHTML = '<option value="all">Todos los años</option>' + YEARS.map(y => '<option value="'+y+'">Solo '+y+'</option>').join('');
-  const last = DATA.periods[DATA.periods.length - 1];
-  document.getElementById('subtitle').textContent =
-    DATA.periods.length+' períodos quincenales · '+DATA.codes.length+' organizaciones · '+fmt(DATA.total)+' asesores únicos · actualizado al '+fmtDate(last) +
-    (PRELIM.length ? ' (' + PRELIM.map(p => 'PB'+p.pb).join(', ') + ' preliminar)' : '');
+  document.getElementById('subtitle').innerHTML =
+    DATA.periods.length+' períodos quincenales · '+DATA.codes.length+' organizaciones · '+fmt(DATA.total)+' asesores únicos · ' + resumenCarga();
+  document.getElementById('person-hint').textContent = 'La fecha es la primera calificación (cuenta una sola vez). Debajo del nombre se listan los premios registrados desde ' + PRZ_DESDE + ', en orden: son acumulativos.';
 }
+
+// ---------- estado de la carga: qué cierres están, cuáles son preliminares y cuáles faltan ----------
+const CARGA = DATA.carga || { periodos: [] };
+const ESTADO_TXT = { Oficial: 'Oficial', Preliminar: 'Preliminar', Historico: 'Solo ganadores', Falta: 'Falta' };
+const ESTADO_CLS = { Oficial: 'of', Preliminar: 'pre', Historico: 'his', Falta: 'fal' };
+function pbTxt(x) { return 'PB' + x.pb + ' de ' + x.anio; }
+function listaPbs(l) {
+  // "PB18, PB19 y PB20 de 2026" agrupando por año
+  const porAnio = {};
+  l.forEach(x => { (porAnio[x.anio] = porAnio[x.anio] || []).push(x.pb); });
+  const partes = Object.keys(porAnio).sort().map(y => {
+    const pbs = porAnio[y].sort((a, b) => a - b).map(n => 'PB' + n);
+    return (pbs.length > 1 ? pbs.slice(0, -1).join(', ') + ' y ' + pbs[pbs.length - 1] : pbs[0]) + ' de ' + y;
+  });
+  return partes.join('; ');
+}
+function resumenCarga() {
+  const u = CARGA.ultimo;
+  const falta = CARGA.periodos.filter(x => x.estado === 'Falta').length;
+  const pre = CARGA.periodos.filter(x => x.estado === 'Preliminar').length;
+  let h = '<button class="link-btn" data-carga>actualizado al ' + (u ? fmtDate(u.fecha) + ' (PB' + u.pb + ')' : '—') + '</button>';
+  if (falta) h += ' <button class="st st-fal" data-carga>' + falta + ' por cargar</button>';
+  if (pre) h += ' <button class="st st-pre" data-carga>' + pre + (pre === 1 ? ' preliminar' : ' preliminares') + '</button>';
+  return h;
+}
+function renderCarga() {
+  const P = CARGA.periodos, u = CARGA.ultimo;
+  const falta = P.filter(x => x.estado === 'Falta'), pre = P.filter(x => x.estado === 'Preliminar'), his = P.filter(x => x.estado === 'Historico');
+  let h = '<div class="modal-h"><div><h2 id="carga-titulo">Estado de la carga</h2>' +
+    '<p class="subtitle">Actualizado al ' + (u ? pbTxt(u) + ' (' + fmtDate(u.fecha) + ')' + (u.estado === 'Preliminar' ? ', preliminar' : '') : '—') +
+    '. Último cierre: ' + (CARGA.ultimo_cierre ? fmtDate(CARGA.ultimo_cierre) : '—') + '.</p></div>' +
+    '<button class="modal-x" data-cerrar-carga aria-label="Cerrar">×</button></div>';
+  h += '<div class="carga-avisos">';
+  if (falta.length) h += '<div class="carga-aviso fal"><b>Falta cargar:</b> ' + listaPbs(falta) + '.</div>';
+  if (pre.length) h += '<div class="carga-aviso pre"><b>Preliminares</b> (falta el oficial): ' + listaPbs(pre) + '.</div>';
+  if (his.length) {
+    const anios = {}, total = {};
+    P.forEach(x => { total[x.anio] = (total[x.anio] || 0) + 1; });
+    his.forEach(x => { anios[x.anio] = (anios[x.anio] || 0) + 1; });
+    const partes = Object.keys(anios).sort().map(y => anios[y] === total[y] ? y + ' completo' : listaPbs(his.filter(x => String(x.anio) === y)));
+    h += '<div class="carga-aviso"><b>Solo ganadores, sin detalle de premios:</b> ' + partes.join('; ') + '.</div>';
+  }
+  if (!falta.length && !pre.length) h += '<div class="carga-aviso ok">Todo cargado y oficial hasta el último cierre.</div>';
+  h += '</div>';
+  h += '<div class="carga-ley">' + ['Oficial', 'Preliminar', 'Historico', 'Falta'].map(e => '<span class="st st-' + ESTADO_CLS[e] + '">' + ESTADO_TXT[e] + '</span>').join('') + '</div>';
+  const porAnio = {};
+  P.forEach(x => { (porAnio[x.anio] = porAnio[x.anio] || []).push(x); });
+  Object.keys(porAnio).sort().reverse().forEach(y => {
+    const l = porAnio[y].slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+    h += '<div class="carga-anio"><h3>' + y + '</h3><div class="carga-grid">' + l.map(x =>
+      '<div class="carga-cel ' + ESTADO_CLS[x.estado] + '" title="' + esc(pbTxt(x) + ' · ' + fmtDate(x.fecha) + ' · ' + ESTADO_TXT[x.estado] +
+        (x.premios ? ' · ' + x.premios + ' premios' : '') + (x.ganadores ? ' · ' + x.ganadores + ' ganadores nuevos' : '')) + '">' +
+        '<b>PB' + x.pb + '</b>' + fmtDate(x.fecha).slice(0, 5) + '</div>').join('') + '</div></div>';
+  });
+  document.getElementById('carga-card').innerHTML = h;
+}
+function abrirCarga() { renderCarga(); document.getElementById('carga-bg').classList.add('open'); }
+function cerrarCarga() { document.getElementById('carga-bg').classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-carga]')) { abrirCarga(); return; }
+  if (e.target.closest('[data-cerrar-carga]') || e.target.id === 'carga-bg') cerrarCarga();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarCarga(); });
 function applyYearFilter() {
   if (state.yearFilter === 'all') { state.fromIdx = 0; state.toIdx = DATA.periods.length - 1; }
   else {
@@ -747,11 +842,11 @@ function renderDrill() {
   }).join('');
   // premios de la organización
   const orgEvs = DATA.prizes.filter(p => p[1] === c);
-  let przHtml = '<p class="hint" style="margin-top:6px">Sin premios registrados desde PB10.</p>';
+  let przHtml = '<p class="hint" style="margin-top:6px">Sin premios registrados desde ' + PRZ_DESDE + '.</p>';
   if (orgEvs.length) {
     const rr = prizeRows(orgEvs), ic = {};
     orgEvs.forEach(e => DATA.premioItems[e[4]].forEach(i => { ic[i] = (ic[i] || 0) + 1; }));
-    przHtml = '<div class="panel-h" style="margin-top:14px"><h2>Premios registrados (desde PB10)</h2><div class="meta">'+rr.length+' asesores premiados · '+rr.filter(r => r.has('mayor')).length+' con premio mayor · '+rr.filter(r => r.has('viaje')).length+' con viaje</div></div>' +
+    przHtml = '<div class="panel-h" style="margin-top:14px"><h2>Premios registrados (desde ' + PRZ_DESDE + ')</h2><div class="meta">'+rr.length+' asesores premiados · '+rr.filter(r => r.has('mayor')).length+' con premio mayor · '+rr.filter(r => r.has('viaje')).length+' con viaje</div></div>' +
       '<div>'+DATA.items.map((_, i) => i).filter(i => ic[i]).map(i => itemChip(i, ic[i], true)).join('')+'</div>';
   }
   const hist = lineChart([{ vals: series, color: '#4f46e5', area: true, highlight: maxIdx }], DATA.periods.map(fmtDateShort), { tick: 6, titles: DATA.periods.map(fmtDate) });
@@ -829,11 +924,11 @@ function renderPremios() {
   const evs = przInRange();
   const rangeSet = new Set(inRangePeriods());
   const pbs = DATA.pbs.filter(p => rangeSet.has(p.date));
-  document.getElementById('prz-note').textContent = 'Registro de premios desde PB10 (13/05/2026). Son acumulativos: si un asesor vuelve a salir en otro cierre, se suma lo nuevo.' + (PRELIM.length ? ' * = resultado preliminar.' : '');
+  document.getElementById('prz-note').textContent = 'Registro de premios desde ' + PRZ_DESDE_LARGO + '. Son acumulativos: si un asesor vuelve a salir en otro cierre, se suma lo nuevo.' + (PRELIM.length ? ' * = resultado preliminar.' : '');
   const ids = ['prz-kpis', 'prz-items-table', 'prz-people-table', 'prz-orgs', 'prz-funnel'];
   if (!evs.length) {
     ids.forEach(id => { document.getElementById(id).innerHTML = ''; });
-    document.getElementById('prz-funnel').innerHTML = '<p class="empty-state">No hay premios registrados en el rango. Amplía el rango de períodos (el registro empieza en PB10).</p>';
+    document.getElementById('prz-funnel').innerHTML = '<p class="empty-state">No hay premios registrados en el rango. Amplía el rango de períodos (el registro empieza en ' + PRZ_DESDE + ').</p>';
     document.getElementById('prz-items-meta').textContent = ''; document.getElementById('prz-people-meta').textContent = '';
     przList = []; return;
   }
