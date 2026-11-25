@@ -37,6 +37,8 @@ clave pública. Lo que se puede leer lo deciden las funciones de la base, no el 
   «actualizado al …» abre ese detalle por año.
 - `eya_asesores` — vista con cada asesor **una sola vez**, con la fecha de su primera calificación
 - `eya_items`, `eya_item_alias` — el catálogo de premios y cómo se reconoce cada uno en el texto del PDF
+  (si un PDF trae un premio nuevo, como el Viaje a Guanacaste del PB23 de 2026, se agrega aquí con su
+  categoría: `entrada`, `mayor` o `viaje`; el Nivel Cero toma como nivel viaje todo lo de categoría `viaje`)
 
 Por eso **un PB nuevo no requiere tocar este repo**: se carga en la base y el
 dashboard lo muestra al recargar.
