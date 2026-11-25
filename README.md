@@ -55,6 +55,12 @@ Cada cierre llega el PDF «Resultados Programa Eya! - PBxx». Se carga con
   pasa a `Preliminar` y se carga como `Oficial` (así se hizo con PB01–PB09 de 2026)
 - cada asesor cuenta una sola vez, con su primera calificación
 - los premios se normalizan con `eya_item_alias`; si aparece uno nuevo, se agrega ahí
+- **cada carga pasa sola a Premios** (panel-equipo, `pr_premios`): el disparador
+  `eya_premios_a_premios` corre `pr_sincronizar_eya()`, que trae desde el PB10 de 2026,
+  marca «preliminar» lo preliminar y lo sube a «final» con el oficial. Lo que la oficina
+  declaró lo concilia Premios al abrirse. Si Premios falla, la carga sigue (queda un warning).
+  Desde el 24/11/2026; antes había que apretar «Traer ganadores de ¡Empiece Ya!» en Premios.
+- las migraciones quedan copiadas en `sql/`
 
 ## Antes de tocar el código
 
